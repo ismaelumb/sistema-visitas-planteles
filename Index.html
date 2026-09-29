@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mantenimiento y Mapeo de Planteles</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800">
+
+  <!-- Navbar -->
+  <header class="bg-blue-900 text-white p-4 shadow-md">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold">🛠️ Mantenimiento de Planteles</h1>
+      <span id="role-badge" class="bg-blue-700 text-xs px-3 py-1 rounded-full font-semibold">Operativo / Admin</span>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- Control de pestañas -->
+    <div class="flex border-b border-gray-300">
+      <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="py-2 px-4 border-b-2 border-blue-600 font-bold text-blue-600">
+        📝 Registrar Incidencia
+      </button>
+      <button onclick="cambiarPestana('tablero')" id="tab-tablero" class="py-2 px-4 text-gray-500 font-medium hover:text-blue-600">
+        📊 Tablero de Control (Semáforo)
+      </button>
+    </div>
+
+    <!-- VISTA 1: Formulario de Registro -->
+    <section id="sec-nuevo" class="bg-white p-6 rounded-lg shadow-sm max-w-2xl mx-auto">
+      <h2 class="text-lg font-bold mb-4 border-b pb-2">Nueva Visita / Incidencia</h2>
+      <form id="form-registro" onsubmit="enviarIncidencia(event)" class="space-y-4">
+        
+        <div>
+          <label class="block text-sm font-medium mb-1">Plantel</label>
+          <select id="plantel" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="">Selecciona un plantel...</option>
+            <option value="Plantel Norte">Plantel Norte</option>
+            <option value="Plantel Sur">Plantel Sur</option>
+            <option value="Plantel Centro">Plantel Centro</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Tipo de Pendiente</label>
+            <select id="tipo" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="Fuga de Agua">Fuga de Agua</option>
+              <option value="Falla Eléctrica">Falla Eléctrica</option>
+              <option value="Mobiliario / Equipo">Mobiliario / Equipo</option>
+              <option value="Infraestructura">Infraestructura</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Prioridad</label>
+            <select id="prioridad" required class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="Alta">Alta 🔴</option>
+              <option value="Media">Media 🟡</option>
+              <option value="Baja">Baja 🟢</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Descripción del Problema</label>
+          <textarea id="descripcion" rows="3" required placeholder="Detalla la situación encontrada..." class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Foto de Evidencia (Inicial)</label>
+          <input type="file" id="foto" accept="image/*" capture="environment" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+        </div>
+
+        <button type="submit" id="btn-guardar" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded shadow transition">
+          Guardar Registro
+        </button>
+      </form>
+    </section>
+
+    <!-- VISTA 2: Dashboard / Semáforo -->
+    <section id="sec-tablero" class="hidden space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-bold">Seguimiento de Incidencias</h2>
+        <button onclick="cargarTabla()" class="bg-gray-200 hover:bg-gray-300 text-sm px-3 py-1 rounded">🔄 Actualizar</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="contenedor-cards">
+        <!-- Las cards se renderizan dinámicamente -->
+        <p class="text-gray-500 text-sm">Cargando registros...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal para actualizar estatus / Solución -->
+  <div id="modal-seguimiento" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full space-y-4">
+      <h3 class="text-lg font-bold border-b pb-2">Actualizar Estatus</h3>
+      <input type="hidden" id="modal-incidencia-id">
+      
+      <div>
+        <label class="block text-sm font-medium mb-1">Nuevo Estatus</label>
+        <select id="modal-estatus" class="w-full border rounded p-2">
+          <option value="En Proceso">En Proceso 🟡</option>
+          <option value="Resuelto">Resuelto 🟢</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Comentario de Avance / Solución</label>
+        <textarea id="modal-comentario" rows="2" class="w-full border rounded p-2" placeholder="Escribe qué se realizó..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Evidencia de Solución (Foto)</label>
+        <input type="file" id="modal-foto" accept="image/*" class="w-full text-sm">
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="cerrarModal()" class="px-4 py-2 border rounded text-gray-600">Cancelar</button>
+        <button onclick="guardarSeguimiento()" class="px-4 py-2 bg-blue-600 text-white rounded font-bold">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- NAVEGACIÓN ENTRE PESTAÑAS ---
+    function cambiarPestana(pestana) {
+      document.getElementById('sec-nuevo').classList.toggle('hidden', pestana !== 'nuevo');
+      document.getElementById('sec-tablero').classList.toggle('hidden', pestana !== 'tablero');
+      
+      const tabNuevo = document.getElementById('tab-nuevo');
+      const tabTablero = document.getElementById('tab-tablero');
+
+      if (pestana === 'nuevo') {
+        tabNuevo.className = "py-2 px-4 border-b-2 border-blue-600 font-bold text-blue-600";
+        tabTablero.className = "py-2 px-4 text-gray-500 font-medium hover:text-blue-600";
+      } else {
+        tabTablero.className = "py-2 px-4 border-b-2 border-blue-600 font-bold text-blue-600";
+        tabNuevo.className = "py-2 px-4 text-gray-500 font-medium hover:text-blue-600";
+        cargarTabla();
+      }
+    }
+
+    // --- CONVERSIÓN DE ARCHIVO A BASE64 ---
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        if (!file) resolve('');
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // --- ENVIAR REGISTRO INICIAL ---
+    async function enviarIncidencia(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-guardar');
+      btn.disabled = true;
+      btn.innerText = 'Guardando...';
+
+      const fotoFile = document.getElementById('foto').files[0];
+      const fotoBase64 = await fileToBase64(fotoFile);
+
+      const payload = {
+        plantel: document.getElementById('plantel').value,
+        tipo: document.getElementById('tipo').value,
+        prioridad: document.getElementById('prioridad').value,
+        descripcion: document.getElementById('descripcion').value,
+        fotoBase64: fotoBase64
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerText = 'Guardar Registro';
+          if (res.success) {
+            alert('Incidencia guardada con el ID: ' + res.id);
+            document.getElementById('form-registro').reset();
+            cambiarPestana('tablero');
+          } else {
+            alert('Error: ' + res.error);
+          }
+        })
+        .registrarIncidencia(payload);
+    }
+
+    // --- CARGAR REGISTROS EN EL TABLERO ---
+    function cargarTabla() {
+      const container = document.getElementById('contenedor-cards');
+      container.innerHTML = '<p class="text-gray-500 text-sm">Cargando incidencias...</p>';
+
+      google.script.run
+        .withSuccessHandler(data => {
+          if (data.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No hay registros aún.</p>';
+            return;
+          }
+
+          container.innerHTML = data.map(item => {
+            // Estilo del semáforo según el Estatus
+            let badgeColor = 'bg-red-100 text-red-800 border-red-300';
+            let statusIcon = '🔴';
+            
+            if (item.estatus === 'En Proceso') {
+              badgeColor = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+              statusIcon = '🟡';
+            } else if (item.estatus === 'Resuelto') {
+              badgeColor = 'bg-green-100 text-green-800 border-green-300';
+              statusIcon = '🟢';
+            }
+
+            return `
+              <div class="bg-white border rounded-lg p-4 shadow-sm space-y-3 flex flex-col justify-between">
+                <div>
+                  <div class="flex justify-between items-start">
+                    <span class="text-xs font-mono text-gray-400">${item.id}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded border ${badgeColor}">
+                      ${statusIcon} ${item.estatus}
+                    </span>
+                  </div>
+
+                  <h3 class="font-bold text-gray-900 mt-1">${item.plantel}</h3>
+                  <p class="text-xs text-blue-600 font-semibold">${item.tipo} (${item.prioridad})</p>
+                  <p class="text-sm text-gray-600 mt-2">${item.descripcion}</p>
+                </div>
+
+                <div class="space-y-2 border-t pt-2 text-xs text-gray-500">
+                  <p>📅 ${item.fecha}</p>
+                  ${item.fotoInicial ? `<a href="${item.fotoInicial}" target="_blank" class="text-blue-500 underline block">📷 Ver Foto Inicial</a>` : ''}
+                  ${item.fotoSolucion ? `<a href="${item.fotoSolucion}" target="_blank" class="text-green-600 font-bold underline block">📷 Ver Foto Solución</a>` : ''}
+                  ${item.comentarios ? `<p class="bg-gray-50 p-1 rounded italic">${item.comentarios}</p>` : ''}
+                </div>
+
+                ${item.estatus !== 'Resuelto' ? `
+                  <button onclick="abrirModal('${item.id}')" class="w-full mt-2 bg-gray-800 hover:bg-black text-white text-xs py-1.5 rounded font-semibold">
+                    Atender / Dar Seguimiento
+                  </button>
+                ` : ''}
+              </div>
+            `;
+          }).join('');
+        })
+        .getIncidencias();
+    }
+
+    // --- MODAL DE SEGUIMIENTO ---
+    function abrirModal(id) {
+      document.getElementById('modal-incidencia-id').value = id;
+      document.getElementById('modal-seguimiento').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+      document.getElementById('modal-seguimiento').classList.add('hidden');
+    }
+
+    async function guardarSeguimiento() {
+      const id = document.getElementById('modal-incidencia-id').value;
+      const estatus = document.getElementById('modal-estatus').value;
+      const comentario = document.getElementById('modal-comentario').value;
+      const fotoFile = document.getElementById('modal-foto').files[0];
+
+      if (!comentario) {
+        alert('Por favor escribe un comentario del avance.');
+        return;
+      }
+
+      const fotoBase64 = await fileToBase64(fotoFile);
+
+      const payload = {
+        id: id,
+        nuevoEstatus: estatus,
+        comentario: comentario,
+        fotoBase64: fotoBase64
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          if (res.success) {
+            cerrarModal();
+            cargarTabla();
+          } else {
+            alert('Error al actualizar: ' + res.error);
+          }
+        })
+        .actualizarEstatusIncidencia(payload);
+    }
+  </script>
+</body>
+</html>
