@@ -1,9 +1,19 @@
 // Configuración del proyecto
 const CONFIG = {
-  SPREADSHEET_ID: 'PEGA_AQUI_TU_ID_DE_GOOGLE_SHEETS',
-  DRIVE_FOLDER_ID: 'PEGA_AQUI_TU_ID_DE_CARPETA_DRIVE',
+  SPREADSHEET_ID: '1JnoBYqSlamwNx23kV8y5thneDa4YMCyMZMvgIn5RAZo',
+  DRIVE_FOLDER_ID: '17Sc-b2A0D5YwsCEcvb1dA6cT48tPaf_i',
   SHEET_NAME: 'Incidencias'
 };
+
+function validarConfiguracion() {
+  if (!CONFIG.SPREADSHEET_ID || CONFIG.SPREADSHEET_ID.includes('PEGA_AQUI')) {
+    throw new Error('Configura CONFIG.SPREADSHEET_ID con el ID real de tu hoja de Google Sheets.');
+  }
+
+  if (!CONFIG.DRIVE_FOLDER_ID || CONFIG.DRIVE_FOLDER_ID.includes('PEGA_AQUI')) {
+    throw new Error('Configura CONFIG.DRIVE_FOLDER_ID con el ID real de la carpeta de Google Drive.');
+  }
+}
 
 /**
  * Renderiza la interfaz principal
@@ -21,6 +31,7 @@ function doGet() {
  */
 function getIncidencias() {
   try {
+    validarConfiguracion();
     const sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(CONFIG.SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     
@@ -52,6 +63,7 @@ function getIncidencias() {
  */
 function registrarIncidencia(form) {
   try {
+    validarConfiguracion();
     const sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(CONFIG.SHEET_NAME);
     const id = 'INC-' + new Date().getTime().toString().slice(-6);
     const fecha = new Date().toLocaleString('es-MX');
@@ -87,6 +99,7 @@ function registrarIncidencia(form) {
  */
 function actualizarEstatusIncidencia(payload) {
   try {
+    validarConfiguracion();
     const sheet = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID).getSheetByName(CONFIG.SHEET_NAME);
     const data = sheet.getDataRange().getValues();
     
@@ -128,6 +141,7 @@ function actualizarEstatusIncidencia(payload) {
  * Función auxiliar para guardar imágenes en Base64 a Google Drive
  */
 function guardarEnDrive(base64Data, fileName) {
+  validarConfiguracion();
   const folder = DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID);
   const parts = base64Data.split(';base64,');
   const contentType = parts[0].replace('data:', '');
