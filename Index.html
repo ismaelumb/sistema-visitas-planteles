@@ -127,6 +127,14 @@
   </div>
 
   <script>
+    function googleAppsScriptDisponible() {
+      return typeof google !== 'undefined' && google && google.script && typeof google.script.run === 'function';
+    }
+
+    function mostrarErrorAmbiente() {
+      alert('Esta pantalla debe abrirse dentro de Google Apps Script. Abre la aplicación desde el proyecto de Apps Script y vuelve a intentar.');
+    }
+
     // --- NAVEGACIÓN ENTRE PESTAÑAS ---
     function cambiarPestana(pestana) {
       document.getElementById('sec-nuevo').classList.toggle('hidden', pestana !== 'nuevo');
@@ -163,6 +171,12 @@
     // --- ENVIAR REGISTRO INICIAL ---
     async function enviarIncidencia(e) {
       e.preventDefault();
+
+      if (!googleAppsScriptDisponible()) {
+        mostrarErrorAmbiente();
+        return;
+      }
+
       const btn = document.getElementById('btn-guardar');
       btn.disabled = true;
       btn.innerText = 'Guardando...';
@@ -195,6 +209,11 @@
 
     // --- CARGAR REGISTROS EN EL TABLERO ---
     function cargarTabla() {
+      if (!googleAppsScriptDisponible()) {
+        mostrarErrorAmbiente();
+        return;
+      }
+
       const container = document.getElementById('contenedor-cards');
       container.innerHTML = '<p class="text-gray-500 text-sm">Cargando incidencias...</p>';
 
@@ -263,6 +282,11 @@
     }
 
     async function guardarSeguimiento() {
+      if (!googleAppsScriptDisponible()) {
+        mostrarErrorAmbiente();
+        return;
+      }
+
       const id = document.getElementById('modal-incidencia-id').value;
       const estatus = document.getElementById('modal-estatus').value;
       const comentario = document.getElementById('modal-comentario').value;
